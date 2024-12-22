@@ -48,7 +48,9 @@ INSTALLED_APPS = [
      'dj_rest_auth.registration',
     'allauth',
      'allauth.account',
-     'allauth.socialaccount'
+     'allauth.socialaccount',
+     'ckeditor',
+    'modeltranslation'
 ]
 REST_FRAMEWORK={
  "DEFAULT_PERMISSION_CLASSES": [
@@ -94,6 +96,7 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 
     'allauth.account.middleware.AccountMiddleware',
+    'django.middleware.locale.LocaleMiddleware'
 ]
 
 ROOT_URLCONF = 'config.urls'
@@ -150,7 +153,7 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 # https://docs.djangoproject.com/en/5.1/topics/i18n/
 
-LANGUAGE_CODE = 'en-us'
+# LANGUAGE_CODE = 'en-us'
 
 TIME_ZONE = 'UTC'
 
@@ -181,3 +184,21 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 AUTH_USER_MODEL='api.Partner'
 
 EMAIL_BACKEND='django.core.mail.backends.console.EmailBackend'
+
+
+LANGUAGES = [
+    ('uz', 'Uzbek (Cyrillic)'),  # Узбекский (кириллица)
+    ('uz-latn', "Uzbek (Latin)"),  # Узбекский (латиница)
+    ('kk', 'Kazakh'),
+    ('ar', 'Arabic'),
+    ('fr', 'French'),
+    ('de', 'German'),
+    ('es', 'Spanish'),
+    # ('zh', 'Chinese'),
+    # ('cv', 'Karakalpak'),
+    # ('en', 'English'),
+]
+
+LANGUAGE_CODE = 'uz'
+
+MODELTRANSLATION_LANGUAGES = ('uz', 'uz-latn', 'kk', 'ar', 'fr', 'de', 'es')

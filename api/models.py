@@ -1,10 +1,11 @@
 from django.contrib.auth.models import AbstractUser, PermissionsMixin
 from django.db import models
+from ckeditor.fields import RichTextField
 
 class Partner(AbstractUser, PermissionsMixin):
     full_name = models.CharField(max_length=255, verbose_name="Full Name")
     image = models.ImageField(upload_to='partners/', null=True, blank=True, verbose_name="Image")
-    biography = models.TextField(null=True, blank=True, verbose_name="Biography")
+    biography = RichTextField(null=True, blank=True, verbose_name="Biography")
     position = models.CharField(max_length=255, null=True, blank=True, verbose_name="Position")
 
     class Meta:
@@ -25,7 +26,7 @@ class Decision(models.Model):
 # Award Model
 class Award(models.Model):
     name = models.CharField(max_length=255, verbose_name="Name")
-    description = models.TextField(null=True, blank=True, verbose_name="Description")
+    description = RichTextField(null=True, blank=True, verbose_name="Description")
     image = models.ImageField(upload_to='awards/', null=True, blank=True, verbose_name="Image")
     code = models.CharField(max_length=50, null=True, blank=True, verbose_name="Code")
     docs = models.FileField(upload_to='documents/', null=True, blank=True, verbose_name="Documents")
@@ -56,3 +57,12 @@ class SocialLink(models.Model):
 
     def __str__(self):
         return self.name
+
+class AboutCountryAward(models.Model):
+    text=RichTextField()
+
+    def __str__(self):
+        return f'Davlat Mukofotlari Reestri'
+
+
+

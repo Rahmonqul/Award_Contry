@@ -3,6 +3,8 @@ from rest_framework.serializers import ModelSerializer, SerializerMethodField, I
 from .paginator import *
 from dj_rest_auth.serializers import UserDetailsSerializer
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+
+from django.utils.translation import get_language
 # from rest_framework_simplejwt.views import TokenObtainPairView
 
 class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
@@ -18,11 +20,15 @@ class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
 
 
 class AwardSerializer(ModelSerializer):
+    name = SerializerMethodField()
 
     class Meta:
         model = Award
-        fields = ['id','name', 'image', 'code']
+        fields = ['id', 'name', 'image', 'code']
 
+    def get_name(self, obj):
+        language = get_language()
+        return getattr(obj, f'name_{language}', obj.name)
 
 
 class PartnerSerializer(ModelSerializer):
@@ -49,10 +55,12 @@ class PartnerSerializer(ModelSerializer):
 class AwardDetailSerializer(ModelSerializer):
     partners = SerializerMethodField()  # Список партнеров
     partner_count = SerializerMethodField()  # Общее количество партнеров
+    name = SerializerMethodField()  # Локализованное название
+    description = SerializerMethodField()  # Локализованное описание
 
     class Meta:
         model = Award
-        fields = ['id','name', 'image', 'description', 'partner_count', 'partners']
+        fields = ['id', 'name', 'image', 'description', 'partner_count', 'partners']
 
     def get_partners(self, obj):
         # Получаем партнеров, связанных с данной наградой
@@ -63,6 +71,16 @@ class AwardDetailSerializer(ModelSerializer):
     def get_partner_count(self, obj):
         # Считаем количество уникальных партнеров, связанных с наградой
         return AwardPartner.objects.filter(award=obj).count()
+
+    def get_name(self, obj):
+        # Получаем локализованное название
+        language = get_language()
+        return getattr(obj, f'name_{language}', obj.name)
+
+    def get_description(self, obj):
+        # Получаем локализованное описание
+        language = get_language()
+        return getattr(obj, f'description_{language}', obj.description)
 
 
 
@@ -193,7 +211,6 @@ class AwardPartnerFilterSerializer(ModelSerializer):
             "date_awarded": obj.date.strftime('%Y-%m-%d'),  # Используем дату напрямую
         }
 
-
 class SocialLinkSerializer(ModelSerializer):
     class Meta:
         model=SocialLink
@@ -205,3 +222,16 @@ class CustomUserDetailsSerializer(UserDetailsSerializer):
 
     class Meta(UserDetailsSerializer.Meta):
         fields = UserDetailsSerializer.Meta.fields + ('partner_info',)
+
+
+class CountryAwardSerializer(ModelSerializer):
+    text = SerializerMethodField()
+
+    class Meta:
+        model = AboutCountryAward
+        fields = ['id','text']
+
+    def get_text(self, obj):
+        language = get_language()
+
+        return getattr(obj, f'text_{language}', obj.text)
