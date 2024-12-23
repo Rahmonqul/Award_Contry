@@ -10,7 +10,7 @@ from django.core.paginator import Paginator
 from rest_framework import filters
 from django_filters.rest_framework import DjangoFilterBackend
 from .filters import PartnerFilter
-from .permissions import IsAuthorOrReadOnly
+# from .permissions import IsAuthorOrReadOnly
 from rest_framework.permissions import *
 from dj_rest_auth.views import UserDetailsView
 from rest_framework.exceptions import PermissionDenied, NotFound
@@ -19,17 +19,14 @@ from django.utils import translation
 class AwardView(APIView):
     permission_classes = []
 
-    def get(self, request, lang, *args, **kwargs):
+    def get(self, request, *args, **kwargs):
         try:
-            if lang not in dict(LANGUAGES):
-                return Response({"detail": "Invalid language code."}, status=status.HTTP_400_BAD_REQUEST)
-
-            translation.activate(lang)
+            user_language = request.GET.get('lang', request.headers.get('X-Language', 'en'))
+            translation.activate(user_language)  # Активируем выбранный язык
 
             awards = Award.objects.all()
 
             paginator = AwardPagination()
-
             result_page = paginator.paginate_queryset(awards, request)
             serializer = AwardSerializer(result_page, many=True)
 
@@ -42,12 +39,9 @@ class AwardDetailView(RetrieveAPIView):
     queryset = Award.objects.all()
     serializer_class = AwardDetailSerializer
 
-    def get(self, request, lang, *args, **kwargs):
-        if lang not in dict(LANGUAGES):
-            return Response({"detail": "Invalid language code."}, status=status.HTTP_400_BAD_REQUEST)
-
-        # Активируем указанный язык
-        translation.activate(lang)
+    def get(self, request, *args, **kwargs):
+        user_language = request.GET.get('lang', request.headers.get('X-Language', 'en'))
+        translation.activate(user_language)  # Активируем выбранный язык
 
         # Получаем объект награды
         try:
@@ -65,13 +59,11 @@ class AwardDetailView(RetrieveAPIView):
 
 
 class AwardDetailYearDecisionAPIView(APIView):
-    def get(self, request, id, year, lang):
+    def get(self, request, id, year):
         try:
 
-            if lang not in dict(LANGUAGES):
-                return Response({"detail": "Invalid language code."}, status=status.HTTP_400_BAD_REQUEST)
-
-            translation.activate(lang)
+            user_language = request.GET.get('lang', request.headers.get('X-Language', 'en'))
+            translation.activate(user_language)  # Активируем выбранный язык
 
             awards = AwardPartner.objects.filter(
                 award_id=id,
@@ -93,8 +85,6 @@ class AwardDetailYearDecisionAPIView(APIView):
 
             # Сериализация решений с пагинацией
             decision_serializer = DecisionSerializer(result_page, many=True)
-
-            # translation.deactivate()
 
             return paginator.get_paginated_response(decision_serializer.data)
 
@@ -138,63 +128,61 @@ class SearchUserApiView(ListAPIView):
     queryset = Partner.objects.all()
     serializer_class = PartnerSearchSerializer
     filter_backends = (filters.SearchFilter,)
-    search_fields = ['full_name']
+    search_fields = ['full_name']  # Оставляем общий фильтр, который будет использоваться для поиска
 
     def get_serializer_context(self):
         # Получаем язык из параметра URL
-        lang = self.kwargs.get('lang', 'uz')  # По умолчанию 'uz', если язык не передан
-        translation.activate(lang)  # Активируем язык
+        user_language = self.request.query_params.get('lang', 'en')  # По умолчанию 'en'
+        translation.activate(user_language)  # Активируем выбранный язык
 
         context = super().get_serializer_context()
-        context['lang'] = lang  # Добавляем язык в контекст для сериализатора
+        context['lang'] = user_language  # Добавляем язык в контекст для сериализатора
         return context
 
     def get_queryset(self):
-        queryset = super().get_queryset()
-        lang = self.kwargs.get('lang', 'uz')  # Получаем язык из параметра URL
+        # Получаем строку поиска из параметров запроса
+        search_term = self.request.query_params.get('search', '')
+        lang = self.request.query_params.get('lang', 'en')  # Язык из параметра URL (по умолчанию 'en')
 
-        # Используем модель перевода для поля full_name, чтобы найти записи на указанном языке
-        search_term = self.request.query_params.get('search', '')  # Получаем строку поиска
+        # Фильтрация на основе строки поиска и языка
+        queryset = super().get_queryset()
 
         if search_term:
-            # Строим фильтр для поля, например, 'full_name_<lang>'
             search_field = f'full_name_{lang}'  # Имя поля для поиска в нужном языке
-            queryset = queryset.filter(**{search_field + '__icontains': search_term})
+            queryset = queryset.filter(**{f'{search_field}__icontains': search_term})
 
         return queryset
 
-class DetailUserApiView(ListAPIView):
-    # permission_classes = [IsAuthorOrReadOnly]
+class DetailUserApiView(RetrieveAPIView):
     queryset = Partner.objects.all()
     serializer_class = PartnerDetailSerializer
+    lookup_field = 'pk'  # Используем ID в URL для поиска объекта
 
     def get_serializer_context(self):
         context = super().get_serializer_context()
-        lang = self.kwargs.get('lang', 'uz')
-        translation.activate(lang)
+        lang = self.request.query_params.get('lang', 'uz')  # Получаем язык из параметра query
+        translation.activate(lang)  # Активируем выбранный язык
         context['lang'] = lang
         return context
 
     def get(self, request, *args, **kwargs):
-        partner = self.get_object()
-        serializer = self.get_serializer(partner)
+        partner = self.get_object()  # Получаем объект по ID
+        serializer = self.get_serializer(partner)  # Сериализуем объект
         return Response(serializer.data)
 
-    def put(self, request, *args, **kwargs):
-        return self.patch(request, *args, **kwargs)
 
 
 class PartnerFilterAPIView(ListAPIView):
     queryset = Partner.objects.all()
     serializer_class = PartnerDetailSerializer
     filter_backends = [DjangoFilterBackend]
-    filterset_class = PartnerFilter
+    filterset_class = PartnerFilter  # Применяем фильтр для модели Partner
 
     def get_serializer_context(self):
         context = super().get_serializer_context()
-        lang = self.kwargs.get('lang', 'uz')
-        translation.activate(lang)
-        context['lang'] = lang
+        lang = self.request.query_params.get('lang', 'uz')  # Извлекаем язык из query параметров
+        translation.activate(lang)  # Активируем выбранный язык
+        context['lang'] = lang  # Добавляем язык в контекст для сериализатора
         return context
 
 class SocilaLinksApiView(ListAPIView):
@@ -214,9 +202,9 @@ class CustomUserDetailsView(UserDetailsView):
 class CountryAwardApiview(APIView):
 
 
-    def get(self, request, lang, *args, **kwargs):
-
-        translation.activate(lang)
+    def get(self, request, *args, **kwargs):
+        user_language = request.GET.get('lang', request.headers.get('X-Language', 'en'))
+        translation.activate(user_language)  # Активируем выбранный язык
 
 
         countryaward = AboutCountryAward.objects.all()

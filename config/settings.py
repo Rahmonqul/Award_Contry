@@ -50,6 +50,7 @@ INSTALLED_APPS = [
      'allauth.account',
      'allauth.socialaccount',
      'ckeditor',
+
     'modeltranslation'
 ]
 REST_FRAMEWORK={
@@ -124,9 +125,17 @@ WSGI_APPLICATION = 'config.wsgi.application'
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
 DATABASES = {
+    # 'default': {
+    #     'ENGINE': 'django.db.backends.sqlite3',
+    #     'NAME': BASE_DIR / 'db.sqlite3',
+    # }
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.postgresql_psycopg2',
+        'NAME': 'awardcountry',
+        'USER': 'award_admin',
+        'PASSWORD': 'dymany',
+        'HOST': 'localhost', # Agar masofaviy bo'lsa, IP-manzil kiriting
+        'PORT': '5432',  # Postgresning standart porti
     }
 }
 
@@ -153,11 +162,13 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 # https://docs.djangoproject.com/en/5.1/topics/i18n/
 
-# LANGUAGE_CODE = 'en-us'
+LANGUAGE_CODE = 'en-us'
 
 TIME_ZONE = 'UTC'
 
 USE_I18N = True
+
+USE_L10N=True
 
 USE_TZ = True
 
@@ -187,18 +198,11 @@ EMAIL_BACKEND='django.core.mail.backends.console.EmailBackend'
 
 
 LANGUAGES = [
-    ('uz', 'Uzbek (Cyrillic)'),  # Узбекский (кириллица)
-    ('uz-latn', "Uzbek (Latin)"),  # Узбекский (латиница)
-    ('kk', 'Kazakh'),
-    ('ar', 'Arabic'),
-    ('fr', 'French'),
-    ('de', 'German'),
-    ('es', 'Spanish'),
-    # ('zh', 'Chinese'),
-    # ('cv', 'Karakalpak'),
-    # ('en', 'English'),
+    ('en', 'English'),
+    ('uz', 'Uzbek'),
+    ('ru', 'Russian'),
 ]
 
-LANGUAGE_CODE = 'uz'
+MODELTRANSLATION_DEFAULT_LANGUAGE = 'en'
 
-MODELTRANSLATION_LANGUAGES = ('uz', 'uz-latn', 'kk', 'ar', 'fr', 'de', 'es')
+MODELTRANSLATION_LANGUAGES=('en', 'uz', 'ru')

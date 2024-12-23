@@ -21,7 +21,6 @@ class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
 
 class AwardSerializer(ModelSerializer):
     name = SerializerMethodField()
-
     class Meta:
         model = Award
         fields = ['id', 'name', 'image', 'code']
@@ -48,7 +47,6 @@ class PartnerSerializer(ModelSerializer):
         return None
 
     def get_count_award(self, obj):
-
         return AwardPartner.objects.filter(partner=obj).count()
 
 
@@ -73,12 +71,10 @@ class AwardDetailSerializer(ModelSerializer):
         return AwardPartner.objects.filter(award=obj).count()
 
     def get_name(self, obj):
-
         language = get_language()
         return getattr(obj, f'name_{language}', obj.name)
 
     def get_description(self, obj):
-
         language = get_language()
         return getattr(obj, f'description_{language}', obj.description)
 
@@ -126,7 +122,7 @@ class AwardPartnerDetailSerializer(ModelSerializer):
 
 class PartnerSearchSerializer(ModelSerializer):
     count_award = SerializerMethodField()
-    fio = CharField(source='full_name')
+    fio = CharField(source='full_name')  # Поле fio, соответствующее full_name в модели
     image = SerializerMethodField()
     awards = SerializerMethodField()
 
@@ -144,24 +140,22 @@ class PartnerSearchSerializer(ModelSerializer):
         return obj.award_partners.count()
 
     def get_awards(self, obj):
-
         awards = Award.objects.filter(award_partners__partner=obj)
-
-
         paginator = AwardPagination()
         result_page = paginator.paginate_queryset(awards, self.context['request'])
         return paginator.get_paginated_response(AwardSerializer(result_page, many=True, context=self.context).data).data
 
     def to_representation(self, instance):
         representation = super().to_representation(instance)
-        lang = self.context.get('lang', 'en')
+        lang = self.context.get('lang', 'en')  # Получаем язык из контекста
 
+        # Переводим поля на нужный язык
         for field in ['fio', 'biography', 'position']:
-            if hasattr(instance, f'{field}_{lang}'):
-                representation[field] = getattr(instance, f'{field}_{lang}')
+            translated_field = f'{field}_{lang}'  # Пример: fio_es, biography_es
+            if hasattr(instance, translated_field):
+                representation[field] = getattr(instance, translated_field)
 
         return representation
-
 
 class PartnerDetailSerializer(ModelSerializer):
     count_award = SerializerMethodField()

@@ -6,11 +6,11 @@ from modeltranslation.translator import translator, TranslationOptions
 
 
 # Регистрация моделей
-admin.site.register(Award)
+# admin.site.register(Award)
 admin.site.register(AwardPartner)
-admin.site.register(Decision)
+# admin.site.register(Decision)
 admin.site.register(SocialLink)
-admin.site.register(AboutCountryAward)
+# admin.site.register(AboutCountryAward)
 
 # Регистрация переводов для модели Partner
 class PartnerTranslationOptions(TranslationOptions):
@@ -20,7 +20,7 @@ translator.register(Partner, PartnerTranslationOptions)
 
 
 @admin.register(Partner)
-class PartnerAdmin(TranslationAdmin, UserAdmin):
+class PartnerAdmin(TranslationAdmin,UserAdmin):
 
     model = Partner
 
@@ -28,4 +28,12 @@ class PartnerAdmin(TranslationAdmin, UserAdmin):
     fieldsets = UserAdmin.fieldsets + (
         (None, {"fields": ("full_name", "image", "biography", "position")}),
     )
-
+    class Media:
+            js = (
+                'http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js',
+                'http://ajax.googleapis.com/ajax/libs/jqueryui/1.10.2/jquery-ui.min.js',
+                'modeltranslation/js/tabbed_translation_fields.js',
+            )
+            css = {
+                'screen': ('modeltranslation/css/tabbed_translation_fields.css',),
+            }

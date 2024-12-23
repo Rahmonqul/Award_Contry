@@ -1,12 +1,12 @@
 from django.contrib.auth.models import AbstractUser, PermissionsMixin
 from django.db import models
 from ckeditor.fields import RichTextField
-
+from django.utils.translation import gettext_lazy as _
 class Partner(AbstractUser, PermissionsMixin):
-    full_name = models.CharField(max_length=255, verbose_name="Full Name")
-    image = models.ImageField(upload_to='partners/', null=True, blank=True, verbose_name="Image")
-    biography = RichTextField(null=True, blank=True, verbose_name="Biography")
-    position = models.CharField(max_length=255, null=True, blank=True, verbose_name="Position")
+    full_name = models.CharField(_("Full Name"), max_length=255)
+    image = models.ImageField(upload_to='partners/', null=True, blank=True, verbose_name=_("Image"))
+    biography = RichTextField(null=True, blank=True, verbose_name=_("Biography"))
+    position = models.CharField(max_length=255, null=True, blank=True, verbose_name=_("Position"))
 
     class Meta:
         verbose_name = "Partner"
