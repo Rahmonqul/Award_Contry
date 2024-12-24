@@ -8,8 +8,8 @@ from modeltranslation.admin import TranslationAdmin
 class AwardTranslationOptions(TranslationOptions):
     fields = ('name', 'description')
 
-class SocialLinkTranslationOptions(TranslationOptions):
-    fields = ('name',)
+# class SocialLinkTranslationOptions(TranslationOptions):
+#     fields = ('name',)
 
 class AboutCountryAwardTranslationOptions(TranslationOptions):
     fields = ('text',)
@@ -19,7 +19,7 @@ class DecisionTranslationOptions(TranslationOptions):
 
 
 translator.register(Award, AwardTranslationOptions)
-translator.register(SocialLink, SocialLinkTranslationOptions)
+# translator.register(SocialLink, SocialLinkTranslationOptions)
 translator.register(AboutCountryAward, AboutCountryAwardTranslationOptions)
 translator.register(Decision, DecisionTranslationOptions)
 

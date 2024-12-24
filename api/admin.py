@@ -23,10 +23,16 @@ translator.register(Partner, PartnerTranslationOptions)
 class PartnerAdmin(TranslationAdmin,UserAdmin):
 
     model = Partner
+    list_display = ["full_name", "position", "is_staff"]
 
-    # Поля для отображения в админке
+    # Поля для добавления нового пользователя
+    add_fieldsets = UserAdmin.add_fieldsets + (
+        (None, {"fields": ("full_name", "position")}),
+    )
+
+    # Поля для редактирования существующего пользователя
     fieldsets = UserAdmin.fieldsets + (
-        (None, {"fields": ("full_name", "image", "biography", "position")}),
+        (None, {"fields": ("full_name", "position")}),
     )
     class Media:
             js = (

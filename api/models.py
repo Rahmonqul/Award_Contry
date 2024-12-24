@@ -13,7 +13,7 @@ class Partner(AbstractUser, PermissionsMixin):
         verbose_name_plural = "Partners"
 
     def __str__(self):
-        return self.username  # Используем стандартное поле username для идентификации
+        return self.full_name  # Используем стандартное поле username для идентификации
 
 class Decision(models.Model):
     name = models.CharField(max_length=255, verbose_name="Name")
