@@ -1,5 +1,5 @@
 from .models import *
-from rest_framework.serializers import ModelSerializer, SerializerMethodField, IntegerField, CharField
+from rest_framework.serializers import ListField, DateField, ModelSerializer, SerializerMethodField, IntegerField, CharField,Serializer
 from .paginator import *
 from dj_rest_auth.serializers import UserDetailsSerializer
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
@@ -18,17 +18,22 @@ class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
 
         return token
 
-
+#1-apiga serializer
 class AwardSerializer(ModelSerializer):
     name = SerializerMethodField()
+    partner_count=SerializerMethodField()
     class Meta:
         model = Award
-        fields = ['id', 'name', 'image', 'code']
+        fields = ['id', 'name', 'image', 'code', 'partner_count']
 
     def get_name(self, obj):
         language = get_language()
         return getattr(obj, f'name_{language}', obj.name)
 
+    def get_partner_count(self, obj):
+        return  AwardPartner.objects.filter(award=obj).count()
+
+#
 
 class PartnerSerializer(ModelSerializer):
     count_award = SerializerMethodField()
@@ -49,7 +54,7 @@ class PartnerSerializer(ModelSerializer):
     def get_count_award(self, obj):
         return AwardPartner.objects.filter(partner=obj).count()
 
-
+#2-api ga serializer
 class AwardDetailSerializer(ModelSerializer):
     partners = SerializerMethodField()
     partner_count = SerializerMethodField()
@@ -67,7 +72,6 @@ class AwardDetailSerializer(ModelSerializer):
         return PartnerSerializer(partners, many=True, context=self.context).data
 
     def get_partner_count(self, obj):
-
         return AwardPartner.objects.filter(award=obj).count()
 
     def get_name(self, obj):
@@ -86,10 +90,17 @@ class AwardPartnerSerializer(ModelSerializer):
         model = AwardPartner
         fields = ['id','award_id', 'decision_id', 'date', 'partner_id']
 
+
+#3-apiga serializer
 class DecisionSerializer(ModelSerializer):
+    count=SerializerMethodField()
     class Meta:
         model=Decision
-        fields=['id', 'name', 'link']
+        fields=['id', 'name', 'link', 'count']
+
+    def get_count(self, obj):
+        return AwardPartner.objects.filter(decision=obj).count()
+
 
 
 class AwardPartnerDetailSerializer(ModelSerializer):
@@ -151,7 +162,7 @@ class PartnerSearchSerializer(ModelSerializer):
 
         # Переводим поля на нужный язык
         for field in ['fio', 'biography', 'position']:
-            translated_field = f'{field}_{lang}'  # Пример: fio_es, biography_es
+            translated_field = f'{field}_{lang}'
             if hasattr(instance, translated_field):
                 representation[field] = getattr(instance, translated_field)
 
@@ -194,6 +205,18 @@ class PartnerDetailSerializer(ModelSerializer):
                 representation[field] = getattr(instance, f'{field}_{lang}')
 
         return representation
+
+class PartnerFilterRequestSerializer(Serializer):
+    award_ids = ListField(
+        child=IntegerField(),
+        required=False,
+        allow_empty=True,
+        label="List of award IDs"
+    )
+    award_code = CharField(required=False, label="Award Code")
+    date=DateField(required=False, label="Date (e.g., YYYY-MM-DD)", input_formats=['%Y-%m-%d'])
+
+
 class AwardPartnerFilterSerializer(ModelSerializer):
     fio = SerializerMethodField()
     owner_image = SerializerMethodField()

@@ -9,6 +9,18 @@ https://docs.djangoproject.com/en/5.1/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.1/ref/settings/
 """
+import os
+from dotenv import load_dotenv
+import dj_database_url
+# Загружаем .env файл
+load_dotenv()
+
+# Теперь вы можете использовать переменные окружения в вашем проекте
+SECRET_KEY = os.getenv('SECRET_KEY')
+DEBUG = os.getenv('DEBUG') == 'True'  # Преобразуем строку 'True' в булево значение
+DATABASE_URL = os.getenv('DATABASE_URL')
+
+
 
 from pathlib import Path
 
@@ -20,7 +32,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-gs1i=_05xeg+rk585bbi%j_6qkl-#-%l-+=&)!hqnl8xlp(o4)'
+
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -50,6 +62,7 @@ INSTALLED_APPS = [
      'allauth.account',
      'allauth.socialaccount',
      'ckeditor',
+      'drf_yasg',
 
     'modeltranslation'
 ]
@@ -129,14 +142,7 @@ DATABASES = {
     #     'ENGINE': 'django.db.backends.sqlite3',
     #     'NAME': BASE_DIR / 'db.sqlite3',
     # }
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql_psycopg2',
-        'NAME': 'awardcountry',
-        'USER': 'award_admin',
-        'PASSWORD': 'dymany',
-        'HOST': 'localhost', # Agar masofaviy bo'lsa, IP-manzil kiriting
-        'PORT': '5432',  # Postgresning standart porti
-    }
+    'default': dj_database_url.parse(os.getenv('DATABASE_URL'))
 }
 
 

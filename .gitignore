@@ -7,3 +7,4 @@ __pycache__/
 # Игнорировать файлы Pipfile и Pipfile.lock
 Pipfile
 Pipfile.lock
+.env

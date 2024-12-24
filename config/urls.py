@@ -14,13 +14,23 @@ Including another URLconf
     1. Import the include() function: from django.urls.py import include, path
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls.py'))
 """
-
+from drf_yasg.views import get_schema_view
+from drf_yasg import openapi
 from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.i18n import i18n_patterns
 from django.conf.urls.static import static
 from  drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView, SpectacularRedocView
+from rest_framework import permissions
+schema_view = get_schema_view(
+    openapi.Info(
+        title="API Documentation",
+        default_version='v1',
+    ),
+    public=True,
+    permission_classes=(permissions.AllowAny,),
+)
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -29,8 +39,9 @@ urlpatterns = [
     path('auth/dj-rest-auth/', include('dj_rest_auth.urls') ),
     path('auth/dj-rest-auth/registration/', include('dj_rest_auth.registration.urls')),
     path('schema/', SpectacularAPIView.as_view(), name="schema"),
-    path('schema/swagger/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger'),
-    path('schema/redoc/', SpectacularRedocView.as_view(url_name='schema'), name='redoc')
+    # path('schema/swagger/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger'),
+    # path('schema/redoc/', SpectacularRedocView.as_view(url_name='schema'), name='redoc'),
+    path('swagger/', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),
 ]
 
 if settings.DEBUG:
