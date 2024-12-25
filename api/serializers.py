@@ -14,7 +14,6 @@ class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
 
         token['name'] = user.first_name
         token['username']=user.username
-        # ...
 
         return token
 
@@ -33,7 +32,7 @@ class AwardSerializer(ModelSerializer):
     def get_partner_count(self, obj):
         return  AwardPartner.objects.filter(award=obj).count()
 
-#
+# Partner api uchun serializer
 
 class PartnerSerializer(ModelSerializer):
     count_award = SerializerMethodField()
@@ -133,7 +132,7 @@ class AwardPartnerDetailSerializer(ModelSerializer):
 
 class PartnerSearchSerializer(ModelSerializer):
     count_award = SerializerMethodField()
-    fio = CharField(source='full_name')  # Поле fio, соответствующее full_name в модели
+    fio = CharField(source='full_name')
     image = SerializerMethodField()
     awards = SerializerMethodField()
 
@@ -156,17 +155,16 @@ class PartnerSearchSerializer(ModelSerializer):
         result_page = paginator.paginate_queryset(awards, self.context['request'])
         return paginator.get_paginated_response(AwardSerializer(result_page, many=True, context=self.context).data).data
 
-    def to_representation(self, instance):
-        representation = super().to_representation(instance)
-        lang = self.context.get('lang', 'en')  # Получаем язык из контекста
-
-        # Переводим поля на нужный язык
-        for field in ['fio', 'biography', 'position']:
-            translated_field = f'{field}_{lang}'
-            if hasattr(instance, translated_field):
-                representation[field] = getattr(instance, translated_field)
-
-        return representation
+    # def to_representation(self, instance):
+    #     representation = super().to_representation(instance)
+    #     lang = self.context.get('lang', 'en')
+    #
+    #     for field in ['fio', 'biography', 'position']:
+    #         translated_field = f'{field}_{lang}'
+    #         if hasattr(instance, translated_field):
+    #             representation[field] = getattr(instance, translated_field)
+    #
+    #     return representation
 
 class PartnerDetailSerializer(ModelSerializer):
     count_award = SerializerMethodField()
@@ -195,16 +193,20 @@ class PartnerDetailSerializer(ModelSerializer):
         result_page = paginator.paginate_queryset(awards, self.context['request'])
         return paginator.get_paginated_response(AwardSerializer(result_page, many=True, context=self.context).data).data
 
-    def to_representation(self, instance):
-        representation = super().to_representation(instance)
 
-        lang = self.context.get('lang', 'uz')
-
-        for field in ['fio', 'biography', 'position']:
-            if hasattr(instance, f'{field}_{lang}'):
-                representation[field] = getattr(instance, f'{field}_{lang}')
-
-        return representation
+    def get_position(self, obj):
+        language = get_language()
+        return getattr(obj, f'text_{language}', obj.position)
+    # def to_representation(self, instance):
+    #     representation = super().to_representation(instance)
+    #
+    #     lang = self.context.get('lang', 'en')
+    #     for field in ['fio', 'biography', 'position']:
+    #         translated_field = f'{field}_{lang}'
+    #         if hasattr(instance, translated_field):
+    #             representation[field] = getattr(instance, translated_field)
+    #
+    #     return representation
 
 class PartnerFilterRequestSerializer(Serializer):
     award_ids = ListField(
@@ -245,7 +247,7 @@ class AwardPartnerFilterSerializer(ModelSerializer):
 class SocialLinkSerializer(ModelSerializer):
     class Meta:
         model=SocialLink
-        fields=['link']
+        fields=['name','link', 'icon']
 
 
 class CustomUserDetailsSerializer(UserDetailsSerializer):
@@ -257,12 +259,10 @@ class CustomUserDetailsSerializer(UserDetailsSerializer):
 
 class CountryAwardSerializer(ModelSerializer):
     text = SerializerMethodField()
-
     class Meta:
         model = AboutCountryAward
         fields = ['id','text']
 
     def get_text(self, obj):
         language = get_language()
-
         return getattr(obj, f'text_{language}', obj.text)

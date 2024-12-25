@@ -40,7 +40,7 @@ class AwardView(APIView):
     def get(self, request, *args, **kwargs):
         try:
             user_language = request.headers.get('Accept-Language', 'en')
-            translation.activate(user_language)  # Активируем выбранный язык
+            translation.activate(user_language)
 
             awards = Award.objects.all()
 
@@ -52,11 +52,6 @@ class AwardView(APIView):
 
         except Exception as e:
             return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
-
-
-
-
-
 
 
 
@@ -75,11 +70,9 @@ class AwardDetailView(RetrieveAPIView):
 
     @swagger_auto_schema(manual_parameters=[accept_language_header])
     def get(self, request, *args, **kwargs):
-        # Получение языка из заголовка
         user_language = request.headers.get('Accept-Language', 'en')
         translation.activate(user_language)
 
-        # Получаем объект награды
         try:
             instance = self.get_object()
         except Award.DoesNotExist:
@@ -109,8 +102,12 @@ class AwardDetailYearDecisionAPIView(APIView):
     @swagger_auto_schema(manual_parameters=[accept_language_header, page_param, page_size_param])
     def get(self, request, id, year):
         try:
-            user_language = request.GET.get('lang', request.headers.get('X-Language', 'en'))
-            translation.activate(user_language)  # Активируем выбранный язык
+            user_language = (
+                    request.GET.get('lang') or
+                    request.headers.get('X-Language') or
+                    request.headers.get('Accept-Language', 'en')
+            )
+            translation.activate(user_language)
 
             awards = AwardPartner.objects.filter(
                 award_id=id,
@@ -130,7 +127,6 @@ class AwardDetailYearDecisionAPIView(APIView):
             paginator = DecisionPagination()
             result_page = paginator.paginate_queryset(decisions, request)
 
-            # Сериализация решений с пагинацией
             decision_serializer = DecisionSerializer(result_page, many=True)
 
             return paginator.get_paginated_response(decision_serializer.data)
@@ -138,8 +134,7 @@ class AwardDetailYearDecisionAPIView(APIView):
         except Exception as e:
             return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
-
-
+#decision api
 
 class DecisionUserAwardAPIView(APIView):
     accept_language_header = openapi.Parameter(
@@ -158,11 +153,17 @@ class DecisionUserAwardAPIView(APIView):
     @swagger_auto_schema(manual_parameters=[accept_language_header, page_param, page_size_param])
     def get(self, request, id, year, award_id):
         try:
-            # Фильтруем по id (решение), year (год), и award_id (ID награды)
+            user_language = (
+                    request.GET.get('lang') or
+                    request.headers.get('X-Language') or
+                    request.headers.get('Accept-Language', 'en')
+            )
+            translation.activate(user_language)
+
             awards = AwardPartner.objects.filter(
-                decision_id=id,  # ID решения
-                date__year=year,  # Год вручения
-                award_id=award_id  # ID награды
+                decision_id=id,  # ID
+                date__year=year,  # Year
+                award_id=award_id  # Award Id isi
             )
 
             if not awards.exists():
@@ -197,7 +198,6 @@ class SearchUserApiView(ListAPIView):
     filter_backends = (filters.SearchFilter,)
     search_fields = ['full_name']
 
-    # Параметры Swagger для пагинации и языка
     accept_language_header = openapi.Parameter(
         'Accept-Language', openapi.IN_HEADER,
         description="Specify the language of the content to be returned. If not provided, the default language will be used.",
@@ -213,36 +213,35 @@ class SearchUserApiView(ListAPIView):
 
     page_size_param = openapi.Parameter(
         'page_size', openapi.IN_QUERY,
-        description="Page size (default is 20, max is 20)",
+        description="Page size ",
         type=openapi.TYPE_INTEGER,
         default=20
     )
 
-    # Используем декоратор для автоматической генерации документации Swagger
     @swagger_auto_schema(manual_parameters=[accept_language_header, page_param, page_size_param])
     def get(self, request, *args, **kwargs):
-        # Получаем строку поиска из параметров запроса
+
         search_term = self.request.query_params.get('search', '')
-        lang = self.request.query_params.get('lang', 'en')  # Язык из параметра URL (по умолчанию 'en')
+        lang = self.request.query_params.get('lang', 'en')
 
-        # Получаем язык из параметра URL или заголовка
-        user_language = self.request.query_params.get('lang', self.request.headers.get('Accept-Language', 'en'))
-        translation.activate(user_language)  # Активируем выбранный язык
+        user_language = (
+            request.GET.get('lang') or
+            request.headers.get('X-Language') or
+            request.headers.get('Accept-Language', 'en')
+        )
+        translation.activate(user_language)
 
-        # Фильтрация на основе строки поиска и языка
         queryset = self.get_queryset()
 
         if search_term:
-            search_field = f'full_name_{lang}'  # Имя поля для поиска в нужном языке
+            search_field = f'full_name_{lang}'
             queryset = queryset.filter(**{f'{search_field}__icontains': search_term})
 
-        # Пагинация
         paginator = self.paginate_queryset(queryset)
         if paginator is not None:
             serializer = self.get_serializer(paginator, many=True)
             return self.get_paginated_response(serializer.data)
 
-        # Если пагинация не нужна (для маленьких наборов данных)
         serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data)
 
@@ -251,7 +250,7 @@ class SearchUserApiView(ListAPIView):
 class DetailUserApiView(RetrieveAPIView):
     queryset = Partner.objects.all()
     serializer_class = PartnerDetailSerializer
-    lookup_field = 'pk'  # Используем ID в URL для поиска объекта
+    lookup_field = 'pk'
 
     accept_language_header = openapi.Parameter(
         'Accept-Language', openapi.IN_HEADER,
@@ -259,22 +258,24 @@ class DetailUserApiView(RetrieveAPIView):
         type=openapi.TYPE_STRING
     )
 
-
-
-
-    def get_serializer_context(self):
-        context = super().get_serializer_context()
-        lang = self.request.query_params.get('lang', 'uz')  # Получаем язык из параметра query
-        translation.activate(lang)  # Активируем выбранный язык
-        context['lang'] = lang
-        return context
+    # def get_serializer_context(self):
+    #     context = super().get_serializer_context()
+    #     lang = self.request.query_params.get('lang', 'en')
+    #     translation.activate(lang)
+    #     context['lang'] = lang
+    #     return context
 
     @swagger_auto_schema(manual_parameters=[accept_language_header])
     def get(self, request, *args, **kwargs):
+        user_language = (
+                request.GET.get('lang') or
+                request.headers.get('X-Language') or
+                request.headers.get('Accept-Language', 'en')
+        )
+        translation.activate(user_language)
         partner = self.get_object()
         serializer = self.get_serializer(partner)
         return Response(serializer.data)
-
 
 
 
@@ -304,8 +305,6 @@ class PartnerFilterAPIView(APIView):
         default=20
     )
 
-
-
     @swagger_auto_schema(
         request_body=PartnerFilterRequestSerializer,
         responses={200: PartnerDetailSerializer(many=True)},
@@ -313,8 +312,8 @@ class PartnerFilterAPIView(APIView):
     )
     def post(self, request, *args, **kwargs):
 
-        user_language = request.META.get('HTTP_ACCEPT_LANGUAGE', 'en')  # Default to 'en' if not provided
-        translation.activate(user_language)  # Активируем выбранный язык
+        user_language = request.META.get('HTTP_ACCEPT_LANGUAGE', 'en')
+        translation.activate(user_language)
         # Десериализация тела запроса
         serializer = PartnerFilterRequestSerializer(data=request.data)
         if serializer.is_valid():
@@ -371,14 +370,16 @@ class CountryAwardApiview(APIView):
 
     @swagger_auto_schema(manual_parameters=[accept_language_header])
     def get(self, request, *args, **kwargs):
-        user_language = request.GET.get('lang', request.headers.get('X-Language', 'en'))
+        user_language = (
+            request.GET.get('lang') or
+            request.headers.get('X-Language') or
+            request.headers.get('Accept-Language', 'en')
+        )
         translation.activate(user_language)  # Активируем выбранный язык
 
         countryaward = AboutCountryAward.objects.all()
 
         serializer = CountryAwardSerializer(countryaward, many=True)
         response = Response(serializer.data, status=status.HTTP_200_OK)
-
-        # translation.deactivate()
 
         return response

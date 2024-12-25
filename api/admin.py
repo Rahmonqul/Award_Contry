@@ -27,12 +27,12 @@ class PartnerAdmin(TranslationAdmin,UserAdmin):
 
     # Поля для добавления нового пользователя
     add_fieldsets = UserAdmin.add_fieldsets + (
-        (None, {"fields": ("full_name", "position")}),
+        (None, {"fields": ("full_name", "biography", "position")}),
     )
 
     # Поля для редактирования существующего пользователя
     fieldsets = UserAdmin.fieldsets + (
-        (None, {"fields": ("full_name", "position")}),
+        (None, {"fields": ("full_name", "biography", "position")}),
     )
     class Media:
             js = (
